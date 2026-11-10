@@ -16,22 +16,22 @@
 tools:
   # ---------------- Core tools ----------------
   - name: clarify
-    description: "Gửi một câu hỏi cho người dùng."
+    description: "Gửi một câu hỏi cho người dùng khi thiếu thông tin bắt buộc hoặc cần xin xác nhận."
     parameters:
       type: object
       properties:
-        question: {type: string, default: "", description: "Câu hỏi"}
-        response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Kiểu trả lời"}
+        question: {type: string, default: "", description: "Nội dung câu hỏi ngắn gọn"}
+        response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Kiểu trả lời: bắt buộc dùng 'yes_no' khi cần người dùng xác nhận Có/Không (như trước khi gửi tin send, đăng bài); dùng 'text' khi hỏi thông tin như link, tên; dùng 'choice' khi chọn từ danh sách"}
         options: {type: array, default: [], items: {type: string}, description: "Các lựa chọn"}
       required: [question]
 
   - name: timeline
-    description: "Lấy các bài đăng gần đây."
+    description: "Lấy các bài đăng gần đây của mộttài khoản Twitter/X."
     parameters:
       type: object
       properties:
-        screenname: {type: string, default: "", description: "Tên tài khoản"}
-        limit: {type: integer, default: 5, description: "Số lượng"}
+        screenname: {type: string, default: "", description: "Tên handle tài khoản viết liền chữ thường, không có dấu cách, không chứa ký tự '@' (ví dụ: 'elonmusk', 'karpathy', 'sama'). KHÔNG dùng tên hiển thị đầy đủ như 'Elon Musk'"}
+        limit: {type: integer, default: 5, description: "Số lượng bài đăng cần lấy. BẮT BUỘC phải truyền số lượng cụ thể nếu người dùng có yêu cầu số bài (ví dụ: 3 bài, 5 bài), kể cả khi cập nhật từ lượt chat trước"}
       required: [screenname]
 
   - name: social_search
@@ -45,13 +45,13 @@ tools:
       required: [query]
 
   - name: lookup
-    description: "Tra cứu thông tin trên internet."
+    description: "Tra cứu thông tin trên internet bằng web search."
     parameters:
       type: object
       properties:
-        query: {type: string, default: "", description: "Truy vấn"}
-        topic: {type: string, enum: [general, news], default: "general", description: "Phân loại"}
-        timeframe: {type: string, enum: [day, week, month, year], default: "week", description: "Khoảng thời gian"}
+        query: {type: string, default: "", description: "Từ khóa hoặc thực thể cốt lõi cần tra cứu (ví dụ: 'AI', 'DeepSeek'). QUY ƯỚC QUAN TRỌNG: KHÔNG ghép các từ 'news', 'tin tức', 'today' vào query nếu đã chọn topic=news hoặc dùng timeframe."}
+        topic: {type: string, enum: [general, news], default: "general", description: "Phân loại: chọn 'news' cho tin tức/thời sự, 'general' cho tìm kiếm chung"}
+        timeframe: {type: string, enum: [day, week, month, year], default: "week", description: "Khoảng thời gian bài viết"}
         max_results: {type: integer, default: 5, description: "Số kết quả"}
       required: [query]
 
@@ -124,18 +124,18 @@ tools:
         max_chars: {type: integer, default: 8000, description: "Số ký tự"}
       required: [arxiv_url]
   
-  - name: dedupe
-    description: >
-      Loại bỏ các item nghiên cứu trùng URL và giữ lại item xuất hiện đầu tiên.
-      Dùng trước format khi kết quả đến từ nhiều nguồn hoặc nhiều lần tìm kiếm.
-      Không dùng để tìm kiếm, đọc URL hoặc thay thế format.
-    parameters:
-      type: object
-      properties:
-        items:
-          type: array
-          default: []
-          description: Danh sách item kết quả nghiên cứu
-          items:
-            type: object
-      required: [items]
+  # - name: dedupe
+  #   description: >
+  #     Loại bỏ các item nghiên cứu trùng URL và giữ lại item xuất hiện đầu tiên.
+  #     Dùng trước format khi kết quả đến từ nhiều nguồn hoặc nhiều lần tìm kiếm.
+  #     Không dùng để tìm kiếm, đọc URL hoặc thay thế format.
+  #   parameters:
+  #     type: object
+  #     properties:
+  #       items:
+  #         type: array
+  #         default: []
+  #         description: Danh sách item kết quả nghiên cứu
+  #         items:
+  #           type: object
+  #     required: [items]
