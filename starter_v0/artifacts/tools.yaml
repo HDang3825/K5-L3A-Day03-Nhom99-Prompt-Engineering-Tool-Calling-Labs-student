@@ -123,3 +123,19 @@ tools:
         max_pages: {type: integer, default: 5, description: "Số trang"}
         max_chars: {type: integer, default: 8000, description: "Số ký tự"}
       required: [arxiv_url]
+  
+  - name: dedupe
+    description: >
+      Loại bỏ các item nghiên cứu trùng URL và giữ lại item xuất hiện đầu tiên.
+      Dùng trước format khi kết quả đến từ nhiều nguồn hoặc nhiều lần tìm kiếm.
+      Không dùng để tìm kiếm, đọc URL hoặc thay thế format.
+    parameters:
+      type: object
+      properties:
+        items:
+          type: array
+          default: []
+          description: Danh sách item kết quả nghiên cứu
+          items:
+            type: object
+      required: [items]
