@@ -3,5 +3,189 @@
   "dataset_role": "group",
   "description": "Case do NHÓM tự viết thêm để cover thêm trường hợp. Mỗi case cần: id, phase='B', query HOẶC turns, failure_type (thuộc allowed_failure_types), và expect (tool_calls[...] hoặc no_tool=true). Nên kèm metadata.what_it_tests.",
   "allowed_failure_types": ["wrong_tool", "wrong_arg_value", "wrong_boundary", "unnecessary_tool", "out_of_scope", "missing_info"],
-  "cases": []
+  "cases": [
+    {
+      "id": "G01_dedupe_before_format",
+      "phase": "B",
+      "suite": "group",
+      "query": "Tìm tin AI từ nhiều nguồn, loại bỏ bài trùng nhau rồi tạo bản tin ngắn.",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {"name": "lookup", "args": {"query": "AI"}},
+          {"name": "dedupe", "args": {}},
+          {"name": "format", "args": {"template": "brief"}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "hard",
+        "what_it_tests": "Tìm kiếm, loại kết quả trùng URL bằng dedupe, rồi format thành brief."
+      }
+    },
+    {
+      "id": "G02_missing_article_url",
+      "phase": "B",
+      "suite": "group",
+      "query": "Đọc và tóm tắt bài nghiên cứu này giúp mình.",
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "text"}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "easy",
+        "what_it_tests": "Thiếu URL cụ thể thì hỏi lại, không tự đoán bài viết."
+      }
+    },
+    {
+      "id": "G03_top_ai_tweets_with_limit",
+      "phase": "B",
+      "suite": "group",
+      "query": "Tìm 8 tweet phổ biến nhất về AI agents trên Twitter.",
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "social_search", "args": {"query": "AI agents", "search_type": "Top", "limit": 8}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "what_it_tests": "Chủ đề Twitter dùng social_search, top dùng search_type=Top và trích đúng limit."
+      }
+    },
+    {
+      "id": "G04_confirm_before_telegram",
+      "phase": "B",
+      "suite": "group",
+      "query": "Gửi bản tin AI hiện có lên Telegram channel giúp mình.",
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {"name": "clarify", "args": {"response_type": "yes_no"}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "what_it_tests": "Hành động gửi ra ngoài phải hỏi xác nhận trước và chưa được gọi send."
+      }
+    },
+    {
+      "id": "G05_policy_before_external_research",
+      "phase": "B",
+      "suite": "group",
+      "query": "Theo policy công ty, quy trình nghiên cứu AI cần kiểm tra nguồn như thế nào?",
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {"name": "policy", "args": {"policy_area": "ai_research"}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "what_it_tests": "Câu hỏi về quy trình nghiên cứu nội bộ dùng policy thay vì tìm kiếm web."
+      }
+    },
+    {
+      "id": "M01_clarify_then_timeline",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tóm tắt 6 tweet mới nhất giúp mình."},
+        {"role": "user", "content": "Của Sam Altman nhé."},
+        {"role": "user", "content": "Giữ đúng 6 tweet."}
+      ],
+      "failure_type": "missing_info",
+      "expect": {
+        "tool_calls": [
+          {"name": "timeline", "args": {"screenname": "sama", "limit": 6}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "hard",
+        "what_it_tests": "Giữ limit qua nhiều lượt và map Sam Altman thành handle sama."
+      }
+    },
+    {
+      "id": "M02_carry_news_timeframe",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Cho mình tin AI hôm nay."},
+        {"role": "user", "content": "Còn về robotics thì sao?"},
+        {"role": "user", "content": "Chỉ lấy robotics, vẫn trong hôm nay."}
+      ],
+      "failure_type": "wrong_arg_value",
+      "expect": {
+        "tool_calls": [
+          {"name": "lookup", "args": {"query": "robotics", "topic": "news", "timeframe": "day"}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "hard",
+        "what_it_tests": "Đổi query qua nhiều lượt nhưng giữ topic=news và timeframe=day."
+      }
+    },
+    {
+      "id": "M03_url_then_source_policy",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tóm tắt bài này: https://openai.com/research/"},
+        {"role": "user", "content": "Ngoài tóm tắt, kiểm tra policy về cách trích dẫn nguồn nhé."}
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {"name": "fetch", "args": {"url": "https://openai.com/research/"}},
+          {"name": "policy", "args": {"policy_area": "source_citation"}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "hard",
+        "what_it_tests": "Giữ URL từ lượt trước và bổ sung policy source_citation ở lượt sau."
+      }
+    },
+    {
+      "id": "M04_search_then_dedupe_digest",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Tìm tin mới về AI agents trên web."},
+        {"role": "user", "content": "Lọc các bài trùng nhau rồi trình bày thành các mục."}
+      ],
+      "failure_type": "wrong_tool",
+      "expect": {
+        "tool_calls": [
+          {"name": "lookup", "args": {"query": "AI agents"}},
+          {"name": "dedupe", "args": {}},
+          {"name": "format", "args": {"template": "sections"}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "hard",
+        "what_it_tests": "Giữ kết quả tìm kiếm qua lượt sau và gọi dedupe trước format sections."
+      }
+    },
+    {
+      "id": "M05_confirm_send_after_prompt",
+      "phase": "B",
+      "suite": "group",
+      "turns": [
+        {"role": "user", "content": "Đăng bản tin này lên Telegram."},
+        {"role": "assistant", "content": "Bạn có xác nhận gửi bản tin ra Telegram không?"},
+        {"role": "user", "content": "Có, tôi xác nhận gửi."}
+      ],
+      "failure_type": "wrong_boundary",
+      "expect": {
+        "tool_calls": [
+          {"name": "send", "args": {"confirmed": true}}
+        ]
+      },
+      "metadata": {
+        "difficulty": "hard",
+        "what_it_tests": "Sau khi user xác nhận rõ ràng ở lượt sau, gọi send với confirmed=true."
+      }
+    }
+  ]
 }

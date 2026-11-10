@@ -120,3 +120,50 @@ def test_my_new_tool_bad_input_from_model() -> None:
 
 def test_my_new_tool_failure_returns_error_dict() -> None:
     pytest.skip(TODO)
+
+
+# ---------------- dedupe ----------------
+
+def test_dedupe_removes_duplicate_urls_and_preserves_order() -> None:
+    dedupe_tool = TOOL_FUNCTIONS["dedupe"]
+
+    result = dedupe_tool(items=[
+        {"title": "First", "url": "https://example.com/a"},
+        {"title": "Duplicate", "url": "https://example.com/a"},
+        {"title": "Second", "url": "https://example.com/b"},
+    ])
+
+    assert result["removed_count"] == 1
+    assert result["items"] == [
+        {"title": "First", "url": "https://example.com/a"},
+        {"title": "Second", "url": "https://example.com/b"},
+    ]
+
+
+def test_dedupe_preserves_items_without_url() -> None:
+    dedupe_tool = TOOL_FUNCTIONS["dedupe"]
+
+    result = dedupe_tool(items=[
+        {"title": "No link"},
+        {"title": "With link", "url": "https://example.com/a"},
+    ])
+
+    assert result["removed_count"] == 0
+    assert len(result["items"]) == 2
+
+
+def test_dedupe_invalid_items_returns_error_dict() -> None:
+    dedupe_tool = TOOL_FUNCTIONS["dedupe"]
+
+    result = dedupe_tool(items=["not an object"])
+
+    assert result["error"] == "TypeError"
+    assert "items[0]" in result["message"]
+
+
+def test_dedupe_none_returns_error_dict() -> None:
+    dedupe_tool = TOOL_FUNCTIONS["dedupe"]
+
+    result = dedupe_tool(items=None)
+
+    assert result["error"] == "ValueError"
