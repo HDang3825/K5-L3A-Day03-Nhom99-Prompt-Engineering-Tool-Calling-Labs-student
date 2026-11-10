@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import socket
 import uuid
@@ -24,11 +25,25 @@ PROVIDERS = {
 }
 ARTIFACTS_DIR = ROOT / "artifacts"
 TRANSCRIPTS_DIR = ROOT / "transcripts"
+RUNS_DIR = ROOT / "runs"
 TOOL_CREDENTIALS = (
     ("Tavily · web search", "TAVILY_API_KEY"),
     ("Firecrawl · page fetch", "FIRECRAWL_API_KEY"),
     ("RapidAPI · social search", "RAPIDAPI_KEY"),
     ("Telegram · send action", "TELEGRAM_BOT_TOKEN"),
+)
+STREAMLIT_SECRET_KEYS = (
+    "OPENROUTER_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "GEMINI_API_KEY",
+    "TAVILY_API_KEY",
+    "FIRECRAWL_API_KEY",
+    "RAPIDAPI_KEY",
+    "RAPIDAPI_TWITTER_HOST",
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_CHAT_ID",
+    "ARXIV_USER_AGENT",
 )
 SUGGESTED_PROMPTS = (
     ("Tìm tin AI mới", "Tìm 3 tin AI nổi bật trong tuần này và tóm tắt bằng tiếng Việt."),
@@ -52,6 +67,41 @@ def provider_ready(provider_label: str) -> bool:
     return bool(os.getenv(key_name, "").strip())
 
 
+def load_streamlit_secrets() -> None:
+    """Expose Community Cloud secrets to tools that read environment variables."""
+    try:
+        secrets = st.secrets
+        for key in STREAMLIT_SECRET_KEYS:
+            value = secrets.get(key)
+            if isinstance(value, str) and value.strip():
+                os.environ.setdefault(key, value.strip())
+    except FileNotFoundError:
+        # Local runs may not have a .streamlit/secrets.toml file.
+        pass
+
+
+def read_run_summaries() -> list[dict[str, Any]]:
+    summaries: list[dict[str, Any]] = []
+    for path in sorted(RUNS_DIR.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            version = data.get("version") or path.stem.split("_", 1)[0]
+            summary = data.get("summary", {})
+            summaries.append({
+                "version": str(version),
+                "file": path.name,
+                "case_accuracy": summary.get("case_accuracy"),
+                "tool_routing_accuracy": summary.get("tool_routing_accuracy"),
+                "argument_accuracy": summary.get("argument_accuracy"),
+                "multiturn_accuracy": summary.get("multiturn_accuracy"),
+                "passed_cases": summary.get("passed_cases"),
+                "total_cases": summary.get("total_cases"),
+            })
+        except (OSError, json.JSONDecodeError, TypeError):
+            continue
+    return summaries
+
+
 def new_transcript(provider_name: str, model: str, version: str) -> dict[str, Any]:
     prompt_path = ARTIFACTS_DIR / "system_prompt.md"
     tools_path = ARTIFACTS_DIR / "tools.yaml"
@@ -72,36 +122,36 @@ def new_transcript(provider_name: str, model: str, version: str) -> dict[str, An
 
 
 load_lab_env(ROOT)
+load_streamlit_secrets()
 st.set_page_config(page_title="Research Agent", page_icon="⌘", layout="wide")
 st.markdown(
     """
     <style>
-      :root { color-scheme: dark; }
-      .stApp { background:#1b1b1b; color:#ececec; }
-      [data-testid="stHeader"] { background:rgba(27,27,27,.96); }
-      [data-testid="stSidebar"] { background:#141414; border-right:1px solid #292929; }
+      .stApp { background:var(--background-color); color:var(--text-color); }
+      [data-testid="stHeader"] { background:var(--background-color); }
+      [data-testid="stSidebar"] { background:var(--secondary-background-color); border-right:1px solid var(--secondary-background-color); }
       [data-testid="stSidebar"] > div:first-child { padding-top:1rem; }
       .block-container { max-width:900px; padding-top:1.15rem; padding-bottom:2rem; }
-      h1,h2,h3 { color:#f0f0f0; letter-spacing:-.025em; }
-      p, label, .stCaption { color:#b4b4b4; }
-      .brand { display:flex; gap:.65rem; align-items:center; color:#f1f1f1; font-size:1.02rem; font-weight:680; margin:.2rem 0 1.25rem; }
-      .brand-icon { display:inline-flex; align-items:center; justify-content:center; width:1.85rem; height:1.85rem; border-radius:9px; background:#262626; color:#f4f4f4; font-size:1.05rem; }
-      .side-label { color:#858585; font-size:.73rem; font-weight:720; letter-spacing:.09em; text-transform:uppercase; margin:1.35rem 0 .45rem; }
-      .topline { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #303030; padding:.15rem 0 .8rem; margin-bottom:1.2rem; color:#b8b8b8; font-size:.84rem; }
-      .workspace-title { color:#e8e8e8; font-weight:650; }
+      h1,h2,h3 { color:var(--text-color); letter-spacing:-.025em; }
+      p, label, .stCaption { color:var(--text-color); opacity:.78; }
+      .brand { display:flex; gap:.65rem; align-items:center; color:var(--text-color); font-size:1.02rem; font-weight:680; margin:.2rem 0 1.25rem; }
+      .brand-icon { display:inline-flex; align-items:center; justify-content:center; width:1.85rem; height:1.85rem; border-radius:9px; background:var(--background-color); border:1px solid var(--secondary-background-color); color:var(--text-color); font-size:1.05rem; }
+      .side-label { color:var(--text-color); opacity:.62; font-size:.73rem; font-weight:720; letter-spacing:.09em; text-transform:uppercase; margin:1.35rem 0 .45rem; }
+      .topline { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--secondary-background-color); padding:.15rem 0 .8rem; margin-bottom:1.2rem; color:var(--text-color); opacity:.82; font-size:.84rem; }
+      .workspace-title { color:var(--text-color); font-weight:650; opacity:1; }
       .welcome { text-align:center; padding:9vh 0 2rem; }
-      .welcome h1 { font-size:2rem; font-weight:620; margin-bottom:.45rem; }
-      .welcome p { color:#a5a5a5; margin:0; font-size:.96rem; }
-      .stButton > button { border-radius:10px; border:1px solid #383838; background:#242424; color:#e7e7e7; font-weight:520; min-height:2.5rem; }
-      .stButton > button:hover { border-color:#656565; background:#2d2d2d; color:#fff; }
+      .welcome h1 { color:var(--text-color); font-size:2rem; font-weight:620; margin-bottom:.45rem; }
+      .welcome p { color:var(--text-color); opacity:.7; margin:0; font-size:.96rem; }
+      .stButton > button { border-radius:10px; border:1px solid var(--secondary-background-color); background:var(--secondary-background-color); color:var(--text-color); font-weight:520; min-height:2.5rem; }
+      .stButton > button:hover { border-color:var(--primary-color); background:var(--secondary-background-color); color:var(--text-color); }
       [data-testid="stChatMessage"] { padding:.45rem .4rem; border:0; background:transparent; }
-      [data-testid="stChatInput"] { border:1px solid #424242; border-radius:18px; background:#252525; }
-      [data-testid="stChatInput"] textarea { color:#ededed; }
-      [data-testid="stExpander"] { border:1px solid #373737; border-radius:10px; background:#202020; }
-      div[data-baseweb="select"] > div, div[data-baseweb="input"] > div { background:#202020; border-color:#414141; }
-      [data-testid="stDialog"] { background:#1f1f1f; }
+      [data-testid="stChatInput"] { border:1px solid var(--secondary-background-color); border-radius:18px; background:var(--secondary-background-color); }
+      [data-testid="stChatInput"] textarea { color:var(--text-color); }
+      [data-testid="stExpander"] { border:1px solid var(--secondary-background-color); border-radius:10px; background:var(--secondary-background-color); }
+      div[data-baseweb="select"] > div, div[data-baseweb="input"] > div { background:var(--secondary-background-color); border-color:var(--secondary-background-color); }
+      [data-testid="stDialog"] { background:var(--background-color); color:var(--text-color); }
       [data-testid="stDialog"] [data-testid="stVerticalBlock"] { gap:.75rem; }
-      .muted { color:#858585; font-size:.78rem; }
+      .muted { color:var(--text-color); opacity:.62; font-size:.78rem; }
       .stAlert { border-radius:10px; }
     </style>
     """,
@@ -116,6 +166,8 @@ except Exception as exc:
 
 st.session_state.setdefault("config_provider", "OpenRouter")
 st.session_state.setdefault("config_version", "v0")
+st.session_state.setdefault("agent_processing", False)
+st.session_state.setdefault("active_prompt", None)
 initial_provider_name = PROVIDERS[st.session_state.config_provider][0]
 initial_provider = make_provider(initial_provider_name)
 initial_model = getattr(initial_provider, "default_model", "")
@@ -136,7 +188,18 @@ def show_config() -> None:
     model = st.text_input("Model", key="config_model", help="Có thể giữ model mặc định của provider.").strip() or default_model
     st.text_input("Phiên bản prompt/tools", key="config_version", help="Ví dụ: v0, v1, v2.")
 
-    tab_connection, tab_tools, tab_declarations = st.tabs(["Kết nối", "Dịch vụ", "Tool agent"])
+    run_summaries = read_run_summaries()
+    selected_version = st.session_state.config_version.strip() or "v0"
+    matching_runs = [run for run in run_summaries if run["version"] == selected_version]
+    if not matching_runs:
+        available_versions = sorted({run["version"] for run in run_summaries})
+        available_text = ", ".join(available_versions) if available_versions else "chưa có version nào"
+        st.error(
+            f"Không tìm thấy run cho version `{selected_version}` trong `runs/`. "
+            f"Các version hiện có: {available_text}."
+        )
+
+    tab_connection, tab_tools, tab_declarations, tab_runs = st.tabs(["Kết nối", "Dịch vụ", "Tool agent", "Runs"])
     with tab_connection:
         configured = provider_ready(provider_label)
         if configured:
@@ -190,21 +253,50 @@ def show_config() -> None:
             with st.expander(str(function.get("name", "tool"))):
                 st.write(function.get("description", "Chưa có mô tả."))
 
+    with tab_runs:
+        if matching_runs:
+            st.success(f"Đã tìm thấy {len(matching_runs)} run cho {selected_version}.")
+        st.caption("Danh sách này được đọc trực tiếp từ `starter_v0/runs/*.json`.")
+        if run_summaries:
+            for run in run_summaries:
+                accuracy = run["case_accuracy"]
+                accuracy_text = f"{accuracy:.0%}" if isinstance(accuracy, (int, float)) else "—"
+                with st.expander(f"{run['version']} · {accuracy_text} · {run['file']}"):
+                    metric_labels = (
+                        ("Độ chính xác tổng", "case_accuracy", True),
+                        ("Chọn tool", "tool_routing_accuracy", True),
+                        ("Đối số tool", "argument_accuracy", True),
+                        ("Đa lượt", "multiturn_accuracy", True),
+                        ("Số case đạt", "passed_cases", False),
+                        ("Tổng số case", "total_cases", False),
+                    )
+                    for label, key, is_percentage in metric_labels:
+                        value = run[key]
+                        if isinstance(value, (int, float)) and is_percentage:
+                            value = f"{value:.0%}"
+                        elif value is None:
+                            value = "—"
+                        st.markdown(f"**{label}:** {value}")
+        else:
+            st.caption("Thư mục `runs/` chưa có file JSON nào.")
+
 
 def start_new_chat() -> None:
-    for key in ("history", "transcript", "session_config"):
+    for key in ("history", "transcript", "session_config", "active_prompt"):
         st.session_state.pop(key, None)
+    st.session_state.agent_processing = False
 
 
 with st.sidebar:
     st.markdown('<div class="brand"><span class="brand-icon">⌘</span><span>Research Agent</span></div>', unsafe_allow_html=True)
-    if st.button("＋  Cuộc trò chuyện mới", use_container_width=True, key="new_chat"):
+    busy = st.session_state.agent_processing
+    if st.button("＋  Cuộc trò chuyện mới", use_container_width=True, key="new_chat", disabled=busy):
         start_new_chat()
         st.rerun()
     st.markdown('<div class="side-label">Cuộc trò chuyện</div>', unsafe_allow_html=True)
     st.button("◉  Phiên hiện tại", use_container_width=True, disabled=True, key="current_chat")
     st.markdown('<div style="height:48vh"></div>', unsafe_allow_html=True)
-    if st.button("⚙  Cấu hình", use_container_width=True, key="open_config"):
+    if st.button("⚙  Cấu hình", use_container_width=True, key="open_config", disabled=busy):
         show_config()
 
 provider_label = st.session_state.config_provider
@@ -232,16 +324,27 @@ if not st.session_state.history:
     sample_cols = st.columns(3)
     for index, (title, sample) in enumerate(SUGGESTED_PROMPTS):
         with sample_cols[index]:
-            if st.button(title, key=f"sample_{index}", use_container_width=True):
-                st.session_state.pending_prompt = sample
+            if st.button(title, key=f"sample_{index}", use_container_width=True, disabled=st.session_state.agent_processing):
+                st.session_state.active_prompt = sample
+                st.session_state.agent_processing = True
                 st.rerun()
 
 for message in st.session_state.history:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-submitted = st.chat_input("Nhắn Research Agent…")
-prompt = submitted or st.session_state.pop("pending_prompt", None)
+busy = st.session_state.agent_processing
+submitted = st.chat_input(
+    "Agent đang trả lời, chờ xong để hỏi tiếp…" if busy else "Nhắn Research Agent…",
+    disabled=busy,
+    submit_mode="disable",
+)
+if submitted and not busy:
+    st.session_state.active_prompt = submitted
+    st.session_state.agent_processing = True
+    st.rerun()
+
+prompt = st.session_state.active_prompt if st.session_state.agent_processing else None
 if prompt:
     st.session_state.history.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -290,5 +393,10 @@ if prompt:
     turn_record["ended_at"] = now_iso()
     st.session_state.transcript["turns"].append(turn_record)
     transcript_path = TRANSCRIPTS_DIR / f"{st.session_state.transcript['transcript_id']}.transcript.json"
-    write_transcript(transcript_path, st.session_state.transcript)
+    try:
+        write_transcript(transcript_path, st.session_state.transcript)
+    except Exception as exc:
+        st.error(f"Không lưu được transcript: {type(exc).__name__}: {exc}")
+    st.session_state.active_prompt = None
+    st.session_state.agent_processing = False
     st.rerun()
