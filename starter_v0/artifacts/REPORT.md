@@ -6,7 +6,7 @@
 
 ## Team
 
-- Team:
+- Team: Nhom99
 - Members:
 - Provider/model:
 
@@ -16,7 +16,7 @@
 
 ## A1. Agent này làm được gì
 
-> 1–2 câu mô tả agent dùng để làm gì (cho team khác hiểu nhanh).
+> Agent này là một trợ lý nghiên cứu toàn diện: chuyên tra cứu tin tức web, mạng xã hội, tài liệu nội bộ và học thuật, đọc nội dung URL, sau đó tổng hợp thành bản tin định dạng chuẩn. Hệ thống vận hành an toàn bằng cách chủ động hỏi người dùng khi thiếu dữ kiện và luôn yêu cầu xác nhận trước khi gửi bản tin lên Telegram.
 
 Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc URL, tổng hợp thành digest, và gửi lên Telegram khi được xác nhận."
 
@@ -33,8 +33,12 @@ Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc 
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
 | clarify | hỏi lại người dùng khi thiếu thông tin | không |
-|  |  |  |
-|  |  |  |
+| timeline |lấy bài đăng gần đây của một tài khoản|không  |
+| social_search |tìm bài đăng theo từ khóa| không |
+| lookup |tìm trên web| không |
+| fetch |đọc nội dung một URL| không |
+|format|trình bày các item đã có thành markdown digest| không |
+|dedupe|Lọc bỏ các kết quả bị trùng lặp URL trước khi đưa vào format.|có|
 
 ## A3. Câu hỏi mẫu để thử
 
