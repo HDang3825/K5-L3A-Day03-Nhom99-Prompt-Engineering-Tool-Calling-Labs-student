@@ -8,7 +8,11 @@
 
 - Team: Nhom99
 - Members:
-- Provider/model:
+  - Võ Lê Hải Đăng - 2A202603577
+  - Hoàng Đăng Kiên - 2A202603636
+  - Nguyễn Võ Thái Bảo - 2A202603638
+  - Vũ Đức Thắng - 2A202603601 
+- Provider/model: Openai/gpt-4o-mini, Gemini/gemini-3.5-flash, Anthropic/claude-haiku-4-5-20251001 
 
 ---
 
