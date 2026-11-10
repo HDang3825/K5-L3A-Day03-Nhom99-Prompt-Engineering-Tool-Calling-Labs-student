@@ -24,7 +24,7 @@ Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc 
 
 > Dán link public để team khác mở thử ngay. Cách deploy nhanh bằng Cloudflare Tunnel xem README. Nếu deploy Vercel/Streamlit Cloud thì dán link đó.
 >
-> URL: 
+> URL: https://fits-proc-growing-coalition.trycloudflare.com/
 
 ## A2. Tool agent có
 
@@ -38,15 +38,15 @@ Ví dụ: "Research agent: tìm tin theo từ khóa / theo tài khoản, đọc 
 | lookup |tìm trên web| không |
 | fetch |đọc nội dung một URL| không |
 |format|trình bày các item đã có thành markdown digest| không |
-|dedupe|Lọc bỏ các kết quả bị trùng lặp URL trước khi đưa vào format.|có|
+|dedupe|lọc bỏ các kết quả bị trùng lặp URL trước khi đưa vào tool format.|có|
 
 ## A3. Câu hỏi mẫu để thử
 
 > 3–5 câu hỏi/yêu cầu mẫu để team khác tự thử agent ngay.
 
-1.
-2.
-3.
+1. Hôm nay ngày bao nhiêu?
+2. Thời tiết Hà Nội ngày hôm nay thế nào?
+3. Cho biết giá vàng ngày hôm nay?
 
 ---
 
